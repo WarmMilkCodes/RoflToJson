@@ -1,6 +1,6 @@
 # League of Legends RoflToJson
 
-This script extracts the 'statsJson' from League of Legends replay files (.rofl) and prints it as a JSON object.
+This Python script extracts the 'statsJson' from League of Legends replay files (.rofl) and prints it as a JSON object.
 
 ## Installation
 
