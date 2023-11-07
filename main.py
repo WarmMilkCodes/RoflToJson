@@ -1,3 +1,5 @@
+import tkinter as tk
+from tkinter import filedialog, ttk, messagebox
 import json
 import os
 
@@ -37,11 +39,51 @@ def extract_stats_json_from_rofl(file_name):
     else:
         return None
 
-# Replace 'replay.rofl' with the actual name of your replay file.
-replay_file_name = 'replay.rofl'
-stats_json = extract_stats_json_from_rofl(replay_file_name)
+def open_file():
+    file_path = filedialog.askopenfilename(filetypes=[("ROFL files", "*.rofl"), ("All files", "*.*")])
+    if file_path:
+        json_data = extract_stats_json_from_rofl(file_path)
+        if json_data:
+            text_widget.insert(tk.END, json.dumps(json_data, indent=4))
+        else:
+            messagebox.showerror("Error", "The file could not be processed.")
 
-if stats_json:
-    print(json.dumps(stats_json, indent=4))
-else:
-    print("No stats JSON object found in the file.")
+root = tk.Tk()
+root.title("RoflToJson")
+root.geometry("800x600")
+
+style = ttk.Style()
+style.theme_use("clam")
+
+large_font = ("Verdna", 12)
+small_font = ("Verdana", 10)
+
+padding = (5,5)
+
+button_frame = ttk.Frame(root, padding=padding)
+button_frame.pack(side=tk.TOP, fill=tk.X)
+
+text_frame = ttk.Frame(root, padding=padding)
+text_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+open_button = ttk.Button(button_frame, text="Open ROFL File", command=open_file)
+open_button.pack(side=tk.RIGHT, padx=10, pady=10)
+
+text_widget = tk.Text(text_frame, font=large_font, wrap=tk.NONE)
+text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+scrollbar = ttk.Scrollbar(text_frame, orient='vertical', command=text_widget.yview)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+text_widget['yscrollcommand'] = scrollbar.set
+
+root.configure(background='#f0f0f0')
+text_widget.configure(bg='#ffffff', fg='#333333')
+
+footer_frame = ttk.Frame(root)
+footer_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+footer_label = ttk.Label(footer_frame, text="2023 WarmMilkCodes - v1.0.0", background="#ddd", anchor="center")
+footer_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+root.mainloop()
