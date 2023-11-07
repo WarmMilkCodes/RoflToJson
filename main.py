@@ -48,6 +48,24 @@ def open_file():
         else:
             messagebox.showerror("Error", "The file could not be processed.")
 
+def save_json(data):
+    file_path = filedialog.asksaveasfilename(
+        defaultextension='.json',
+        filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+    )
+    if file_path:
+        with open(file_path, 'w') as json_file:
+            json.dump(data, json_file, indent=4)
+        print(f"File saved successfully at {file_path}")
+
+def handle_save():
+    current_text = text_widget.get("1.0", tk.END)
+    try:
+        data = json.loads(current_text)
+        save_json(data)
+    except json.JSONDecodeError:
+        messagebox.showerror("Error", "The current text is not valid JSON.")
+
 root = tk.Tk()
 root.title("RoflToJson")
 root.geometry("800x600")
@@ -69,7 +87,10 @@ text_frame = ttk.Frame(root, padding=padding)
 text_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 open_button = ttk.Button(button_frame, text="Open ROFL File", command=open_file)
-open_button.pack(side=tk.RIGHT, padx=10, pady=10)
+open_button.pack(side=tk.LEFT, padx=10, pady=10)
+
+save_button = ttk.Button(button_frame, text="Save JSON", command=handle_save)
+save_button.pack(side=tk.RIGHT, padx=10, pady=10)
 
 text_widget = tk.Text(text_frame, font=large_font, wrap=tk.NONE)
 text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
