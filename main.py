@@ -52,6 +52,8 @@ root = tk.Tk()
 root.title("RoflToJson")
 root.geometry("800x600")
 
+root.iconbitmap('rofltojson.ico')
+
 style = ttk.Style()
 style.theme_use("clam")
 
