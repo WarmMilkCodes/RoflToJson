@@ -44,7 +44,9 @@ def open_file():
     if file_path:
         json_data = extract_stats_json_from_rofl(file_path)
         if json_data:
-            text_widget.insert(tk.END, json.dumps(json_data, indent=4))
+            formatted_json = json.dumps(json_data, indent=4)
+            text_widget.delete(1.0, tk.END)
+            text_widget.insert(tk.END, formatted_json)
         else:
             messagebox.showerror("Error", "The file could not be processed.")
 
@@ -92,7 +94,7 @@ open_button.pack(side=tk.LEFT, padx=10, pady=10)
 save_button = ttk.Button(button_frame, text="Save JSON", command=handle_save)
 save_button.pack(side=tk.RIGHT, padx=10, pady=10)
 
-text_widget = tk.Text(text_frame, font=large_font, wrap=tk.NONE)
+text_widget = tk.Text(text_frame, font=large_font, wrap=tk.WORD)
 text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
 scrollbar = ttk.Scrollbar(text_frame, orient='vertical', command=text_widget.yview)
