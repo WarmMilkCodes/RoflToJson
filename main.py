@@ -3,7 +3,7 @@ from tkinter import filedialog, ttk, messagebox
 import json
 import os
 
-def extract_json_from_rofl(file_name):
+def extract_json_from_rofl(file_name, keys):
     with open(file_name, 'rb') as file:
         content = file.read()
         brace_stack = []
@@ -27,10 +27,11 @@ def extract_json_from_rofl(file_name):
             try:
                 json_str = json_bytes.decode('utf-8', 'ignore')
                 json_object = json.loads(json_str)
-                return json_object
+                return {key: json_object[key] for key in keys if key in json_object}
             except json.JSONDecodeError as e:
                 print(f"Error decoding JSON: {e}")
         return None
+
 
 def extract_stats_json_from_rofl(file_name):
     full_json = extract_json_from_rofl(file_name)
@@ -42,7 +43,7 @@ def extract_stats_json_from_rofl(file_name):
 def open_file():
     file_path = filedialog.askopenfilename(filetypes=[("ROFL files", "*.rofl"), ("All files", "*.*")])
     if file_path:
-        json_data = extract_stats_json_from_rofl(file_path)
+        json_data = extract_json_from_rofl(file_path, keys)
         if json_data:
             formatted_json = json.dumps(json_data, indent=4)
             text_widget.delete(1.0, tk.END)
@@ -67,6 +68,8 @@ def handle_save():
         save_json(data)
     except json.JSONDecodeError:
         messagebox.showerror("Error", "The current text is not valid JSON.")
+
+keys = ['NAME', 'ASSISTS', 'BARON_KILLS', 'DOUBLE_KILLS', 'DRAGON_KILLS', 'HORDE_KILLS', 'PENTA_KILLS', 'QUADRA_KILLS', 'RIFT_HERALD_KILLS', 'TRIPLE_KILLS', 'UNREAL_KILLS', 'WIN']        
 
 root = tk.Tk()
 root.title("RoflToJson")
@@ -108,7 +111,7 @@ text_widget.configure(bg='#ffffff', fg='#333333')
 footer_frame = ttk.Frame(root)
 footer_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
-footer_label = ttk.Label(footer_frame, text="2023 WarmMilkCodes - v1.0.0", background="#ddd", anchor="center")
+footer_label = ttk.Label(footer_frame, text="contact@warmmilk.dev - v1.1.0", background="#ddd", anchor="center")
 footer_label.pack(side=tk.BOTTOM, fill=tk.X)
 
 root.mainloop()
