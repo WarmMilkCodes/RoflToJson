@@ -2,54 +2,61 @@ import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 import json
 import os
+import struct
+
+ROFL_SIGNATURE = b'RIOT\x00\x00'   # replays before patch 14.9
+ROFL2_SIGNATURE = b'RIOT\x02\x00'  # replays from patch 14.11 onward
+
+
+def read_rofl_metadata(file_name):
+    with open(file_name, 'rb') as file:
+        signature = file.read(6)
+
+        if signature == ROFL2_SIGNATURE:
+            # Metadata JSON sits at the end of the file; the last 4 bytes hold its length.
+            file.seek(15)
+            game_version = file.read(14).decode('utf-8', 'ignore').strip('\x00 ')
+            file.seek(-4, os.SEEK_END)
+            metadata_length = struct.unpack('<I', file.read(4))[0]
+            file.seek(-(metadata_length + 4), os.SEEK_END)
+            metadata = json.loads(file.read(metadata_length).decode('utf-8'))
+            metadata['gameVersion'] = game_version
+        elif signature == ROFL_SIGNATURE:
+            # Metadata offset and length are in the header, after the 256-byte signature.
+            file.seek(262 + 6)
+            metadata_offset, metadata_length = struct.unpack('<II', file.read(8))
+            file.seek(metadata_offset)
+            metadata = json.loads(file.read(metadata_length).decode('utf-8'))
+        else:
+            raise ValueError("Not a League of Legends replay file.")
+
+    return metadata
+
 
 def extract_json_from_rofl(file_name, keys):
-    with open(file_name, 'rb') as file:
-        content = file.read()
-        brace_stack = []
-        start_idx = None
-        end_idx = None
+    metadata = read_rofl_metadata(file_name)
+    players = json.loads(metadata.get('statsJson') or '[]')
+    if not players:
+        raise ValueError("The replay contains no player stats (the game may not have finished).")
 
-        for idx, byte in enumerate(content):
-            if byte == ord('{'):
-                brace_stack.append(idx)
-                if start_idx is None:
-                    start_idx = idx
-            elif byte == ord('}'):
-                if brace_stack:
-                    brace_stack.pop()
-                    if not brace_stack:
-                        end_idx = idx
-                        break
+    return {
+        'gameVersion': metadata.get('gameVersion'),
+        'gameLength': metadata.get('gameLength'),
+        'players': [{key: player[key] for key in keys if key in player} for player in players],
+    }
 
-        if start_idx is not None and end_idx is not None:
-            json_bytes = content[start_idx:end_idx + 1]
-            try:
-                json_str = json_bytes.decode('utf-8', 'ignore')
-                json_object = json.loads(json_str)
-                return {key: json_object[key] for key in keys if key in json_object}
-            except json.JSONDecodeError as e:
-                print(f"Error decoding JSON: {e}")
-        return None
-
-
-def extract_stats_json_from_rofl(file_name):
-    full_json = extract_json_from_rofl(file_name)
-    if full_json and 'statsJson' in full_json:
-        return full_json['statsJson']
-    else:
-        return None
 
 def open_file():
     file_path = filedialog.askopenfilename(filetypes=[("ROFL files", "*.rofl"), ("All files", "*.*")])
     if file_path:
-        json_data = extract_json_from_rofl(file_path, keys)
-        if json_data:
-            formatted_json = json.dumps(json_data, indent=4)
-            text_widget.delete(1.0, tk.END)
-            text_widget.insert(tk.END, formatted_json)
-        else:
-            messagebox.showerror("Error", "The file could not be processed.")
+        try:
+            json_data = extract_json_from_rofl(file_path, keys)
+        except (OSError, ValueError, struct.error) as e:
+            messagebox.showerror("Error", f"The file could not be processed.\n\n{e}")
+            return
+        formatted_json = json.dumps(json_data, indent=4)
+        text_widget.delete(1.0, tk.END)
+        text_widget.insert(tk.END, formatted_json)
 
 def save_json(data):
     file_path = filedialog.asksaveasfilename(
@@ -111,7 +118,7 @@ text_widget.configure(bg='#ffffff', fg='#333333')
 footer_frame = ttk.Frame(root)
 footer_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
-footer_label = ttk.Label(footer_frame, text="contact@warmmilk.dev - v1.1.0", background="#ddd", anchor="center")
+footer_label = ttk.Label(footer_frame, text="contact@warmmilk.dev - v1.2.0", background="#ddd", anchor="center")
 footer_label.pack(side=tk.BOTTOM, fill=tk.X)
 
 root.mainloop()
