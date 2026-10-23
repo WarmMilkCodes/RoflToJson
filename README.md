@@ -46,3 +46,7 @@ python main.py
 ```
 
 Click **Open ROFL File** to load a replay, then **Save JSON** to write the output to a file.
+
+## AI disclosure
+
+The original version of this script was written without the use of AI. AI (Claude Code) was used to update the script for the ROFL2 replay format introduced in patch 14.11, and to update this README.
